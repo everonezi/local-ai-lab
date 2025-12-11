@@ -1,151 +1,117 @@
-# Local AI & High-Performance Computing Lab
+# 🧪 Local AI & High-Performance Computing Lab
 
-Este repositório documenta a implementação de um ambiente local para execução de LLMs (Large Language Models) e geração de imagens via Stable Diffusion, utilizando aceleração de hardware (GPU).
+> *Implementação de um ambiente local de Inteligência Artificial Generativa e Computação de Alto Desempenho utilizando hardware de consumo (RTX 5060).*
 
-## 🛠️ Infraestrutura e Configuração
+![Exemplo de Geração Cyberpunk](result-cyberpunk.png)
+*Exemplo de geração: Prompt "Cyberpunk Arch Linux Setup" renderizado via Juggernaut XL em ~15s.*
 
-### Sistema Operacional: Windows + WSL 2
-Optei por utilizar o **WSL 2 (Windows Subsystem for Linux)** para criar um ambiente de desenvolvimento híbrido.
+---
 
-* **Por que WSL 2?**
-    * Permite o uso de ferramentas nativas Linux (essenciais para Data Science e IA) sem a sobrecarga de uma Máquina Virtual tradicional.
-    * **GPU Passthrough:** O WSL 2 oferece acesso direto aos drivers da NVIDIA (CUDA) instalados no Windows, permitindo que o container Linux utilize todo o poder da minha RTX 5060 para cálculos tensoriais.
-    * Facilita a integração com Docker, eliminando problemas de compatibilidade comuns no Windows nativo.
+## 📖 Sobre o Projeto
+Este repositório documenta a criação de um laboratório de IA "Full-Stack" rodando localmente. O objetivo foi eliminar a dependência de APIs em nuvem (OpenAI/Google), garantindo privacidade total de dados e latência zero, além de explorar a arquitetura de sistemas Linux dentro do ecossistema Windows via virtualização leve.
 
-**Specs do Ambiente:**
-* **CPU:** Intel Core i5 12400F
-* **GPU:** NVIDIA RTX 5060 (8GB VRAM)
-* **RAM:** 32GB
-* **OS:** Ubuntu 22.04 LTS rodando sobre Windows 11 via WSL 2.
+---
 
-### ⚙️ Configuração do Ambiente Linux (Ubuntu)
+## 🛠️ Infraestrutura e Arquitetura
 
-Após a ativação do subsistema, foi realizada a configuração inicial do ambiente Linux:
+### Sistema Operacional: Híbrido (Windows 11 + WSL 2)
+A infraestrutura baseia-se no **WSL 2 (Windows Subsystem for Linux)**.
 
-1.  **Distribuição:** Ubuntu 22.04 LTS (Jammy Jellyfish).
-    * *Escolha:* Padrão da indústria para servidores e desenvolvimento de IA, garantindo compatibilidade máxima com bibliotecas como PyTorch e TensorFlow.
-2.  **Gestão de Usuários e Permissões:**
-    * Criação de usuário não-root dedicado para desenvolvimento.
-    * Configuração de privilégios de superusuário (`sudo`) para administração de pacotes e serviços.
-3.  **Arquitetura de Filesystem:**
-    * O ambiente Linux opera em seu próprio sistema de arquivos virtual (VHDX), mas mantém acesso de leitura/escrita aos arquivos do host Windows (montados em `/mnt/c/`), facilitando a troca de dados entre os sistemas.
+* **Decisão Técnica:**
+    * Permite o uso de ferramentas nativas Linux (Ubuntu 22.04 LTS) essenciais para Data Science.
+    * **GPU Passthrough:** O WSL 2 oferece acesso direto aos drivers da NVIDIA (CUDA) instalados no Windows, permitindo que o kernel Linux utilize todo o poder da RTX 5060 para cálculos tensoriais sem a sobrecarga de uma VM tradicional.
+    * **Docker Integration:** Elimina problemas de compatibilidade de *filesystem* comuns no Docker Desktop for Windows.
 
-    ### 🚀 Aceleração de Hardware e Container Runtime
+**Specs do Hardware:**
+* **CPU:** Intel Core i5 12400F (Single-core performance para emulação/compilação).
+* **GPU:** NVIDIA RTX 5060 8GB (Tensor Cores para IA).
+* **RAM:** 32GB (Essencial para carregar modelos LLM na memória).
 
-Para orquestrar os modelos de IA, configurei um ambiente baseado em containers Docker com suporte a GPGPU (General-Purpose computing on Graphics Processing Units).
+### ⚙️ Configuração do Ambiente
+1.  **Linux Distro:** Ubuntu 22.04 LTS (Jammy Jellyfish).
+2.  **Permissões:** Configuração de usuário não-root com privilégios `sudo` e inclusão no grupo `docker`.
+3.  **Drivers:** Utilização do *NVIDIA Container Toolkit* para permitir que containers Docker acessem a GPU através da camada de abstração do DirectX 12/WDDM 2.9.
 
-1.  **Integração CUDA (NVIDIA Driver Passthrough):**
-    * Verificação realizada via `nvidia-smi`.
-    * O WSL 2 abstrai o hardware, permitindo que bibliotecas como PyTorch acessem a RTX 5060 diretamente através da camada de compatibilidade do DirectX 12/WDDM 2.9, sem necessidade de drivers proprietários no kernel Linux.
+---
 
-2.  **Docker Engine (Native Linux):**
-    * Optei pela instalação da *Docker Engine* nativa no ambiente Ubuntu (em vez do Docker Desktop for Windows).
-    * **Benefício de Performance:** Redução de overhead de I/O de sistema de arquivos e gerenciamento de rede direto pelo kernel Linux.
-    * Configuração de grupos de usuários (`usermod -aG docker`) para execução segura de containers sem privilégios de root (rootless execution context).
+## 🧠 O "Cérebro": LLMs e Inferência de Texto
 
-    ## 🧠 Engine de Inferência e Runtime
+Para a execução de modelos de linguagem, utilizei uma arquitetura containerizada.
 
-Para habilitar a execução de modelos de Deep Learning dentro de containers, foi necessária a configuração do runtime proprietário da NVIDIA.
+### Backend: Ollama
+Servidor de inferência local otimizado para chips Apple Silicon e NVIDIA.
+* **Performance:** A execução ocorre via chamadas CUDA diretas.
+* **Modelos Selecionados (Model Zoo):**
+    * **Llama 3.1 8B (Quantizado):** Equilíbrio entre raciocínio lógico e velocidade.
+    * **DeepSeek Coder V2:** Modelo especializado (Fine-tuned) em programação, superando modelos generalistas em tarefas de C e Java.
 
-### 1. NVIDIA Container Toolkit
-O Docker padrão isola o hardware do host. Para "perfurar" esse isolamento de forma segura, instalei o `nvidia-container-toolkit`.
-* **Função:** Atua como um *wrapper* para o runtime `runc` do Docker, injetando automaticamente os drivers e bibliotecas CUDA (libcuda.so, libcudart.so) dentro do container na hora da execução.
-* **Comando de validação:** `sudo nvidia-ctk runtime configure --runtime=docker`
+### Frontend: Open WebUI
+Interface visual moderna rodando em Docker, conectada ao Ollama via rede interna.
+* **Stack:** Docker Container na porta 3000.
+* **Features:** Histórico persistente, Syntax Highlighting para código e suporte a RAG (Retrieval-Augmented Generation).
 
-### 2. Ollama (LLM Backend)
-Utilizei o **Ollama** como servidor de inferência local.
-* **Modelo de Teste:** Llama 3.2 (Quantização 4-bit).
-* **Performance:** A execução ocorre nativamente no Linux, acessando a GPU via chamadas CUDA diretas, resultando em latência mínima para geração de tokens.
+![Interface do Open WebUI](webui-chat.png)
 
-## 🔧 Troubleshooting e Lições Aprendidas
+---
 
-Durante a configuração do serviço de inferência, encontrei e solucionei os seguintes comportamentos:
+## 🎨 A "Visão": Pipeline de Geração de Imagens
 
-1.  **Conflito de Portas (Error: address already in use):**
-    * **Causa:** Tentativa de iniciar o servidor `ollama serve` manualmente enquanto o serviço de background (systemd) já estava ativo pós-instalação.
-    * **Solução:** O Ollama opera como um daemon. A interação deve ser feita diretamente via comandos de cliente (`ollama run`), sem necessidade de invocar o servidor manualmente na sessão do usuário.
+Implementação de um pipeline de *Stable Diffusion XL* baseado em nós (Nodes).
 
-2.  **Sintaxe de Modelos:**
-    * A CLI do Ollama requer a nomenclatura exata dos modelos conforme o registro oficial (ex: `llama3.2` em vez de `llama 3.2`), sem espaços que quebrem o parsing do manifesto.
+### Engine: ComfyUI
+Diferente de interfaces simples, o **ComfyUI** permite a manipulação granular do fluxo de tensores latentes.
+* **Workflow:** Carregamento de Checkpoint -> Prompt Positivo/Negativo -> KSampler -> VAE Decode.
+* **Gerenciamento de VRAM:** Otimização agressiva para rodar modelos SDXL (6GB+) em uma placa de 8GB, utilizando *offloading* inteligente para a RAM do sistema.
 
-    ## 🖥️ User Interface & Orchestration (Open WebUI)
+![Workflow de Nós no ComfyUI](comfyui-workflow.png)
 
-Para proporcionar uma experiência de uso comparável a soluções comerciais (SaaS), implementei uma interface web moderna via container Docker.
+### Ferramentas de MLOps:
+* **ComfyUI Manager:** Orquestrador para instalação automática de dependências e Custom Nodes.
+* **Fallback Strategy:** Uso de scripts `curl` com redundância (Hugging Face) para baixar modelos quando repositórios primários (Civitai) apresentam instabilidade.
 
-### Arquitetura da Solução:
-* **Frontend/Application Server:** Open WebUI rodando em container Docker isolado.
-* **Comunicação Inter-Processos:** Utilização da flag `--add-host=host.docker.internal:host-gateway` para permitir que o container Docker acesse o serviço do Ollama rodando no host (WSL 2), superando o isolamento padrão de rede do Docker.
-* **Persistência de Dados:** Configuração de volumes Docker (`-v`) para garantir a durabilidade do histórico de conversas e configurações de usuário (RAG documents) entre reinicializações.
+---
 
-### Stack Visual:
-A interface permite:
-1.  Troca dinâmica de modelos (Hot-swapping).
-2.  Formatação de código com Syntax Highlighting (essencial para Code Review).
-3.  Histórico local e privado.
+## 🔧 Desafios e Troubleshooting (Log de Engenharia)
 
-### ⏱️ Latência de Inicialização (Cold Start)
-Notei que, ao iniciar o container do Open WebUI pela primeira vez, existe um *delay* de inicialização da aplicação interna (backend Python).
-* **Sintoma:** O navegador retorna `ERR_EMPTY_RESPONSE` nos primeiros 30-60 segundos.
-* **Diagnóstico:** Verificação via `docker logs -f open-webui` confirmou que o processo de *boot* do servidor Uvicorn ainda estava em andamento.
-* **Solução:** Aguardar a mensagem `Application startup complete` nos logs antes de tentar o acesso via browser.
+Durante a implementação, documentei e solucionei os seguintes problemas técnicos:
 
-### 🌐 Configuração de Rede e Exposição de Serviços
+### 1. Networking em Containers
+* **Problema:** O container do WebUI não encontrava o Ollama.
+* **Diagnóstico:** O Ollama escuta em `127.0.0.1` (localhost) por padrão, rejeitando conexões externas do Docker.
+* **Solução:** Configurei a variável `OLLAMA_HOST=0.0.0.0` via systemd e utilizei o DNS interno `host.docker.internal` para ponte de rede.
 
-Para viabilizar a comunicação entre o container da aplicação (Open WebUI) e o serviço de inferência no host (Ollama), realizei duas configurações críticas de rede:
+### 2. Depreciação de Bibliotecas Linux
+* **Problema:** Erro ao iniciar o ComfyUI: `ImportError: libGL.so.1`.
+* **Causa:** O pacote `libgl1-mesa-glx` foi descontinuado no Ubuntu 22.04+.
+* **Solução:** Migração para o pacote moderno `libgl1` (Vendor-Neutral GL dispatch library).
 
-1.  **Host Binding (0.0.0.0):**
-    * **Problema:** O Ollama, por padrão, escuta apenas na interface de loopback (`127.0.0.1`), rejeitando conexões da bridge network do Docker.
-    * **Solução:** Alteração via `systemd` override para definir a variável de ambiente `OLLAMA_HOST=0.0.0.0`, permitindo escuta em todas as interfaces de rede.
+### 3. "Cold Start" da Aplicação
+* **Sintoma:** Erro `ERR_EMPTY_RESPONSE` no navegador nos primeiros segundos.
+* **Lição:** Necessidade de aguardar o *boot* completo do servidor Uvicorn interno antes de tentar conexão HTTP.
 
-2.  **DNS Interno do Docker:**
-    * Configurei o frontend para apontar para `http://host.docker.internal:11434`.
-    * Isso utiliza o resolver interno do Docker para encaminhar as requisições HTTP da API para o gateway do host (WSL 2), transpassando o isolamento do container.
+---
 
-    ## 🤖 Seleção de Modelos (Model Zoo)
+## ⚡ Guia de Execução (Runbook)
 
-Para otimizar o uso dos recursos da GPU (8GB VRAM), selecionei uma arquitetura de modelos especializados em vez de um único modelo monolítico:
+Como iniciar o laboratório após reiniciar a máquina:
 
-1.  **General Purpose (Raciocínio e Chat):** `Meta Llama 3.1 8B` (Quantização 4-bit).
-    * Escolhido pelo equilíbrio entre coerência lógica e velocidade de inferência.
-2.  **Development & Coding:** `DeepSeek Coder V2`.
-    * Modelo especializado (Fine-tuned) em linguagens de programação (C, Java, Python), oferecendo performance superior em geração de sintaxe e refatoração de código.
-3.  **Edge/Fast Tasks:** `Llama 3.2 3B`.
-    * Utilizado apenas para tarefas de sumarização simples onde a baixa latência é prioritária.
+1.  **Acordar a Infraestrutura:**
+    ```bash
+    sudo service docker start   # Inicia o Docker
+    sudo systemctl start ollama # Inicia o Backend de IA
+    ```
+2.  **Subir o Laboratório de Imagem:**
+    ```bash
+    cd ~/ComfyUI
+    source venv/bin/activate    # Ativar ambiente Python isolado
+    python main.py              # Iniciar servidor na porta 8188
+    ```
+3.  **Acessos:**
+    * **Chat & Code:** `http://localhost:3000`
+    * **Image Studio:** `http://localhost:8188`
 
-    ### ⚠️ Limitações de Raciocínio (Known Issues)
+---
 
-Testes de lógica temporal demonstraram que modelos da classe 8B (Llama 3.1) tendem a falhar em "pegadinhas" semânticas simples (Zero-shot prompting).
-* **Mitigação:** A implementação de técnicas de *Chain-of-Thought (CoT)* e *Few-Shot Prompting* mostrou-se necessária para forçar o modelo a decompor o problema lógico antes da geração da resposta final.
+## ✅ Conclusão
 
-## 🎨 Pipeline de Visão Computacional (Stable Diffusion)
-
-Para a geração de imagens, implementei uma arquitetura baseada em nós (Node-based Architecture) utilizando o **ComfyUI**.
-
-### Decisões de Arquitetura:
-* **Workflow Visual:** Diferente de interfaces monolíticas, o ComfyUI permite a visualização e manipulação granular do fluxo de tensores latentes (Latent Space tensors).
-* **Otimização de VRAM:** O ComfyUI gerencia a memória da GPU de forma agressiva, carregando e descarregando modelos do VRAM conforme necessário, permitindo a execução de workflows complexos (ex: High-Res Fix, ControlNet) mesmo com limitações de hardware.
-
-### Stack Tecnológica:
-* **Framework:** PyTorch (com suporte a CUDA 12.x).
-* **Motor de Difusão:** Latent Diffusion Models (LDMs).
-* **Ambiente:** Execução isolada via `python venv` no WSL 2 para garantir a reprodutibilidade das dependências.
-
-### 📦 Gestão de Modelos e Extensões
-
-Para mitigar problemas de "Link Rot" (URLs quebradas) em scripts de automação, implementei duas estratégias de redundância:
-1.  **Fallback Repositories:** Utilização do Hugging Face Hub como fonte primária para checkpoints pesados (safetensors), devido à maior estabilidade de banda e imutabilidade dos links em comparação ao Civitai.
-2.  **ComfyUI Manager:** Instalação do orquestrador de dependências `ltdrdata/ComfyUI-Manager`. Isso permite a instalação via GUI de Custom Nodes e modelos, resolvendo automaticamente conflitos de dependência Python e atualizações de versão.
-
-## ✅ Conclusão e Próximos Passos
-
-O projeto foi concluído com sucesso, estabelecendo um laboratório de IA generativa local e privado, capaz de executar tarefas de processamento de linguagem natural e visão computacional sem dependência de nuvem.
-
-**Resultados Chave:**
-* **Infraestrutura Híbrida:** Sucesso na integração WSL 2 + Docker + NVIDIA Container Toolkit, provando ser uma arquitetura viável e performática para desenvolvimento de IA no Windows.
-* **LLM (Ollama):** Implementação de modelos capazes de auxiliar em tarefas de programação (C/Python) com latência zero de rede.
-* **Image Gen (ComfyUI):** Geração de imagens fotorrealistas (SDXL) em menos de 30 segundos [tempo estimado], demonstrando o poder de processamento da RTX 5060 para cargas de trabalho criativas.
-
-**Roadmap Futuro (Férias):**
-* Explorar **ControlNet** para guiar a geração de imagens usando esboços ou poses.
-* Testar **Upscaling com IA** para transformar as imagens de 1024px em 4K.
-* Criar um bot de Telegram que se conecta ao meu Ollama local para conversar pelo celular.
+Este projeto validou a viabilidade de desenvolvimento de IA de alta performance em ambiente Windows doméstico. A combinação de **WSL 2 + Docker + CUDA** provou-se uma stack robusta, permitindo iterar projetos de faculdade e protótipos de software com privacidade e sem custos de nuvem.
