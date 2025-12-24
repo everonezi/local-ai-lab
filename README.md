@@ -7,12 +7,12 @@
 
 ---
 
-## 📖 Sobre o Projeto
+##  Sobre o Projeto
 Este repositório documenta a criação de um laboratório de IA "Full-Stack" rodando localmente. O objetivo foi eliminar a dependência de APIs em nuvem (OpenAI/Google), garantindo privacidade total de dados e latência zero, além de explorar a arquitetura de sistemas Linux dentro do ecossistema Windows via virtualização leve.
 
 ---
 
-## 🛠️ Infraestrutura e Arquitetura
+##  Infraestrutura e Arquitetura
 
 ### Sistema Operacional: Híbrido (Windows 11 + WSL 2)
 A infraestrutura baseia-se no **WSL 2 (Windows Subsystem for Linux)**.
@@ -27,14 +27,14 @@ A infraestrutura baseia-se no **WSL 2 (Windows Subsystem for Linux)**.
 * **GPU:** NVIDIA RTX 5060 8GB (Tensor Cores para IA).
 * **RAM:** 32GB (Essencial para carregar modelos LLM na memória).
 
-### ⚙️ Configuração do Ambiente
+###  Configuração do Ambiente
 1.  **Linux Distro:** Ubuntu 22.04 LTS (Jammy Jellyfish).
 2.  **Permissões:** Configuração de usuário não-root com privilégios `sudo` e inclusão no grupo `docker`.
 3.  **Drivers:** Utilização do *NVIDIA Container Toolkit* para permitir que containers Docker acessem a GPU através da camada de abstração do DirectX 12/WDDM 2.9.
 
 ---
 
-## 🧠 O "Cérebro": LLMs e Inferência de Texto
+##  O "Cérebro": LLMs e Inferência de Texto
 
 Para a execução de modelos de linguagem, utilizei uma arquitetura containerizada.
 
@@ -54,7 +54,7 @@ Interface visual moderna rodando em Docker, conectada ao Ollama via rede interna
 
 ---
 
-## 🎨 A "Visão": Pipeline de Geração de Imagens
+##  A "Visão": Pipeline de Geração de Imagens
 
 Implementação de um pipeline de *Stable Diffusion XL* baseado em nós (Nodes).
 
@@ -71,7 +71,7 @@ Diferente de interfaces simples, o **ComfyUI** permite a manipulação granular 
 
 ---
 
-## 🔧 Desafios e Troubleshooting (Log de Engenharia)
+##  Desafios e Troubleshooting (Log de Engenharia)
 
 Durante a implementação, documentei e solucionei os seguintes problemas técnicos:
 
@@ -91,7 +91,7 @@ Durante a implementação, documentei e solucionei os seguintes problemas técni
 
 ---
 
-## ⚡ Guia de Execução (Runbook)
+##  Guia de Execução (Runbook)
 
 Como iniciar o laboratório após reiniciar a máquina:
 
@@ -112,6 +112,6 @@ Como iniciar o laboratório após reiniciar a máquina:
 
 ---
 
-## ✅ Conclusão
+##  Conclusão
 
 Este projeto validou a viabilidade de desenvolvimento de IA de alta performance em ambiente Windows doméstico. A combinação de **WSL 2 + Docker + CUDA** provou-se uma stack robusta, permitindo iterar projetos de faculdade e protótipos de software com privacidade e sem custos de nuvem.
